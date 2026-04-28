@@ -45,6 +45,14 @@ class PatientData(BaseModel):
     hour_sin: float
     hour_cos: float
 
+
+def estimate_wait_category(wait_time_minutes: float) -> str:
+    if wait_time_minutes <= 10:
+        return "Low"
+    if wait_time_minutes <= 30:
+        return "Medium"
+    return "High"
+
 # ============================================
 # ROOT ENDPOINT
 # ============================================
@@ -81,6 +89,10 @@ def predict(data: PatientData):
     # Ambil output tensor pertama
     output = list(prediction.values())[0].numpy()[0][0]
 
+    predicted_wait_time = round(float(output), 2)
+
     return {
-        "predicted_wait_time_minutes": round(float(output), 2)
+        "predicted_wait_time_minutes": predicted_wait_time,
+        "estimated_wait_category": estimate_wait_category(predicted_wait_time),
+        "status": "success"
     }
