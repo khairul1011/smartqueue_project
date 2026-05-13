@@ -1,5 +1,6 @@
 fastapi
 uvicorn
+gunicorn
 tensorflow==2.20.0
 keras>=3.13.2
 pandas
