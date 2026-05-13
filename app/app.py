@@ -26,12 +26,74 @@ def remove_empty_quantization_config(config):
             remove_empty_quantization_config(item)
 
 
+def read_keras_config(model_path: Path):
+    with zipfile.ZipFile(model_path, "r") as model_archive:
+        return json.loads(model_archive.read("config.json"))
+
+
+def add_layer_from_config(model, layer_config):
+    class_name = layer_config["class_name"]
+    config = layer_config["config"]
+
+    if class_name == "InputLayer":
+        batch_shape = config.get("batch_shape") or config.get("batch_input_shape")
+        input_shape = tuple(batch_shape[1:]) if batch_shape else None
+        model.add(tf.keras.layers.InputLayer(input_shape=input_shape, name=config.get("name")))
+    elif class_name == "Dense":
+        model.add(
+            tf.keras.layers.Dense(
+                units=config["units"],
+                activation=config.get("activation"),
+                use_bias=config.get("use_bias", True),
+                name=config.get("name")
+            )
+        )
+    elif class_name == "BatchNormalization":
+        model.add(
+            tf.keras.layers.BatchNormalization(
+                axis=config.get("axis", -1),
+                momentum=config.get("momentum", 0.99),
+                epsilon=config.get("epsilon", 0.001),
+                center=config.get("center", True),
+                scale=config.get("scale", True),
+                name=config.get("name")
+            )
+        )
+    elif class_name == "Dropout":
+        model.add(
+            tf.keras.layers.Dropout(
+                rate=config["rate"],
+                name=config.get("name")
+            )
+        )
+    else:
+        raise ValueError(f"Unsupported model layer: {class_name}")
+
+
+def load_sequential_model_from_weights(model_path: Path):
+    model_config = read_keras_config(model_path)
+    model = tf.keras.Sequential(name=model_config["config"].get("name"))
+
+    for layer_config in model_config["config"]["layers"]:
+        add_layer_from_config(model, layer_config)
+
+    with tempfile.TemporaryDirectory() as temp_dir:
+        weights_path = Path(temp_dir) / "model.weights.h5"
+
+        with zipfile.ZipFile(model_path, "r") as model_archive:
+            weights_path.write_bytes(model_archive.read("model.weights.h5"))
+
+        model.load_weights(weights_path)
+
+    return model
+
+
 def load_prediction_model(model_path: Path):
     try:
         return tf.keras.models.load_model(model_path, compile=False)
-    except TypeError as error:
+    except (TypeError, ValueError) as error:
         if "quantization_config" not in str(error):
-            raise
+            return load_sequential_model_from_weights(model_path)
 
         with tempfile.TemporaryDirectory() as temp_dir:
             compatible_model_path = Path(temp_dir) / model_path.name
@@ -48,7 +110,10 @@ def load_prediction_model(model_path: Path):
 
                         target.writestr(file_info, data)
 
-            return tf.keras.models.load_model(compatible_model_path, compile=False)
+            try:
+                return tf.keras.models.load_model(compatible_model_path, compile=False)
+            except (TypeError, ValueError):
+                return load_sequential_model_from_weights(model_path)
 
 
 model = load_prediction_model(MODEL_DIR / "best_model.keras")

@@ -20,6 +20,7 @@ smartqueue_project/
 │   └── model lama atau artefak referensi
 ├── notebooks/
 │   └── notebook eksperimen dan training
+├── runtime.txt
 ├── requirements.txt
 └── README.md
 ```
@@ -54,3 +55,19 @@ Aplikasi memuat artefak final dari `deployment/model/`:
 - `target_scaler.save`: scaler untuk mengembalikan hasil prediksi ke satuan menit.
 
 Folder `experiments/` digunakan untuk menyimpan hasil eksperimen dari notebook, sedangkan API production hanya memakai file di `deployment/model/`.
+
+## Deployment Render
+
+Runtime Python ditentukan di `runtime.txt`:
+
+```text
+python-3.10.13
+```
+
+Gunakan start command berikut di Render:
+
+```bash
+gunicorn -w 1 -k uvicorn.workers.UvicornWorker --timeout 120 app.app:app
+```
+
+Render akan menginstall dependency dari `requirements.txt`, termasuk `tensorflow-cpu` agar build lebih ringan untuk environment CPU.
