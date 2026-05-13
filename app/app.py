@@ -1,27 +1,59 @@
+import json
+import tempfile
+import zipfile
+from pathlib import Path
+
 from fastapi import FastAPI
 from pydantic import BaseModel
 import tensorflow as tf
 import joblib
 import pandas as pd
-import numpy as np
 
-# ============================================
-# LOAD OPTIMIZED MODEL DAN SCALER
-# ============================================
-
-# Model hasil optimasi V2
-model = tf.keras.models.load_model("experiments/best_model_v2.keras")
-
-# Feature scaler
-scaler = joblib.load("experiments/scaler_v2.save")
-
-# Target scaler untuk inverse transform output
-target_scaler = joblib.load("models/target_scaler.save")
+BASE_DIR = Path(__file__).resolve().parents[1]
+MODEL_DIR = BASE_DIR / "deployment" / "model"
 
 
-# ============================================
-# FASTAPI INIT
-# ============================================
+# Keeps models saved by newer Keras versions loadable in older runtime images.
+def remove_empty_quantization_config(config):
+    if isinstance(config, dict):
+        if config.get("quantization_config") is None:
+            config.pop("quantization_config", None)
+
+        for value in config.values():
+            remove_empty_quantization_config(value)
+    elif isinstance(config, list):
+        for item in config:
+            remove_empty_quantization_config(item)
+
+
+def load_prediction_model(model_path: Path):
+    try:
+        return tf.keras.models.load_model(model_path, compile=False)
+    except TypeError as error:
+        if "quantization_config" not in str(error):
+            raise
+
+        with tempfile.TemporaryDirectory() as temp_dir:
+            compatible_model_path = Path(temp_dir) / model_path.name
+
+            with zipfile.ZipFile(model_path, "r") as source:
+                with zipfile.ZipFile(compatible_model_path, "w") as target:
+                    for file_info in source.infolist():
+                        data = source.read(file_info.filename)
+
+                        if file_info.filename == "config.json":
+                            config = json.loads(data)
+                            remove_empty_quantization_config(config)
+                            data = json.dumps(config).encode("utf-8")
+
+                        target.writestr(file_info, data)
+
+            return tf.keras.models.load_model(compatible_model_path, compile=False)
+
+
+model = load_prediction_model(MODEL_DIR / "best_model.keras")
+scaler = joblib.load(MODEL_DIR / "feature_scaler.save")
+target_scaler = joblib.load(MODEL_DIR / "target_scaler.save")
 
 app = FastAPI(
     title="SmartQueue AI API",
@@ -29,10 +61,6 @@ app = FastAPI(
     version="2.0"
 )
 
-
-# ============================================
-# INPUT SCHEMA
-# ============================================
 
 class PatientData(BaseModel):
     umur: float
@@ -53,10 +81,6 @@ class PatientData(BaseModel):
     hour_cos: float
 
 
-# ============================================
-# WAIT CATEGORY ESTIMATOR
-# ============================================
-
 def estimate_wait_category(wait_time_minutes: float) -> str:
     if wait_time_minutes <= 10:
         return "Low"
@@ -65,10 +89,6 @@ def estimate_wait_category(wait_time_minutes: float) -> str:
     else:
         return "High"
 
-
-# ============================================
-# ROOT ENDPOINT
-# ============================================
 
 @app.get("/")
 def home():
@@ -80,10 +100,6 @@ def home():
     }
 
 
-# ============================================
-# HEALTH CHECK
-# ============================================
-
 @app.get("/health")
 def health_check():
     return {
@@ -93,35 +109,16 @@ def health_check():
     }
 
 
-# ============================================
-# PREDICTION ENDPOINT
-# ============================================
-
 @app.post("/predict")
 def predict(data: PatientData):
-
     try:
-        # Convert input ke DataFrame
         input_data = pd.DataFrame([data.model_dump()])
-
-        # Feature scaling
         scaled_data = scaler.transform(input_data)
-
-        # Prediksi model
-        raw_prediction = model.predict(
-            scaled_data,
-            verbose=0
-        )
-
-        # Inverse transform ke menit asli
+        raw_prediction = model.predict(scaled_data, verbose=0)
         predicted_wait_time = target_scaler.inverse_transform(
             raw_prediction.reshape(-1, 1)
         )[0][0]
-
-        # Safety clamp
         predicted_wait_time = max(0, predicted_wait_time)
-
-        # Round output
         predicted_wait_time = round(float(predicted_wait_time), 2)
 
         return {
