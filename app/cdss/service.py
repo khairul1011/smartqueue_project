@@ -9,7 +9,7 @@ from typing import Any, Dict, Optional
 import google.generativeai as genai
 
 from app.cdss.prompt import SYSTEM_INSTRUCTION, build_user_prompt
-from app.cdss.schemas import CDSSResponse, PenyakitRekomendasi
+from app.cdss.schemas import CDSSResponse, KandidatDiagnosis
 from app.config import settings
 
 logger = logging.getLogger(__name__)
@@ -58,19 +58,22 @@ def _parse_gemini_response(raw_text: str) -> Dict[str, Any]:
 
 def _build_response(data: Dict[str, Any]) -> CDSSResponse:
     """Konversi dict hasil parsing menjadi CDSSResponse tervalidasi."""
-    rekomendasi_list = []
-    for item in data.get("rekomendasi", []):
-        rekomendasi_list.append(
-            PenyakitRekomendasi(
+    kandidat_list = []
+    for item in data.get("kandidat_diagnosis", []):
+        kandidat_list.append(
+            KandidatDiagnosis(
                 nama_penyakit=item.get("nama_penyakit", "Tidak diketahui"),
-                tingkat_kesesuaian=item.get("tingkat_kesesuaian", "Rendah"),
+                tingkat_urgensi=item.get("tingkat_urgensi", "LOW"),
+                confidence=int(item.get("confidence", 0)),
+                departemen=item.get("departemen", "UMUM"),
                 penjelasan=item.get("penjelasan", ""),
                 pemeriksaan_lanjutan=item.get("pemeriksaan_lanjutan", []),
             )
         )
 
     return CDSSResponse(
-        rekomendasi=rekomendasi_list[:5],  # Maksimal 5
+        gejala_teridentifikasi=data.get("gejala_teridentifikasi", []),
+        kandidat_diagnosis=kandidat_list[:3],  # Maksimal 3
         catatan_medis=data.get("catatan_medis", "Tidak ada catatan tambahan."),
     )
 

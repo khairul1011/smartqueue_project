@@ -36,17 +36,24 @@ class CDSSRequest(BaseModel):
     )
 
 
-class PenyakitRekomendasi(BaseModel):
-    """Detail satu rekomendasi penyakit."""
+class KandidatDiagnosis(BaseModel):
+    """Detail satu kandidat diagnosis."""
 
     nama_penyakit: str = Field(description="Nama penyakit yang direkomendasikan.")
-    tingkat_kesesuaian: str = Field(
-        description="Tingkat kesesuaian: 'Tinggi', 'Sedang', atau 'Rendah'."
+    tingkat_urgensi: str = Field(
+        description="Tingkat urgensi: 'LOW', 'MEDIUM', atau 'HIGH'."
+    )
+    confidence: int = Field(
+        description="Tingkat keyakinan prediksi dalam bentuk persentase (1-100)."
+    )
+    departemen: str = Field(
+        description="Departemen terkait, contoh: 'UMUM', 'BEDAH', 'PENYAKIT DALAM'."
     )
     penjelasan: str = Field(
         description="Penjelasan singkat mengapa penyakit ini direkomendasikan."
     )
     pemeriksaan_lanjutan: List[str] = Field(
+        default=[],
         description="Daftar saran pemeriksaan lanjutan yang relevan."
     )
 
@@ -54,8 +61,11 @@ class PenyakitRekomendasi(BaseModel):
 class CDSSResponse(BaseModel):
     """Schema response rekomendasi penyakit."""
 
-    rekomendasi: List[PenyakitRekomendasi] = Field(
-        description="Daftar rekomendasi penyakit (maksimal 5)."
+    gejala_teridentifikasi: List[str] = Field(
+        description="Daftar frasa gejala utama yang teridentifikasi dari input."
+    )
+    kandidat_diagnosis: List[KandidatDiagnosis] = Field(
+        description="Daftar kandidat diagnosis (maksimal 3)."
     )
     catatan_medis: str = Field(
         description="Catatan dan saran medis tambahan dari sistem."

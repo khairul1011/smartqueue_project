@@ -135,6 +135,28 @@ Sistem ini dilengkapi fitur **CDSS** untuk membantu dokter mendapatkan rekomenda
 }
 ```
 
+**Contoh Response Payload CDSS (JSON):**
+```json
+{
+  "gejala_teridentifikasi": [
+    "demam tinggi", "batuk kering", "sesak napas", "nyeri dada"
+  ],
+  "kandidat_diagnosis": [
+    {
+      "nama_penyakit": "Pneumonia",
+      "tingkat_urgensi": "HIGH",
+      "confidence": 85,
+      "departemen": "PARU",
+      "penjelasan": "Gejala demam tinggi disertai batuk kering dan sesak napas sangat mengarah pada infeksi paru.",
+      "pemeriksaan_lanjutan": ["Rontgen Thorax", "Cek Darah Lengkap"]
+    }
+  ],
+  "catatan_medis": "Segera lakukan observasi saturasi oksigen pasien.",
+  "disclaimer": "Hasil ini merupakan rekomendasi berbasis AI...",
+  "status": "success"
+}
+```
+
 > **⚠️ Disclaimer:** Fitur CDSS merupakan alat bantu berbasis AI dan **BUKAN** pengganti diagnosis medis. Keputusan klinis tetap sepenuhnya berada di tangan dokter yang merawat.
 
 ---
