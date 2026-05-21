@@ -93,6 +93,7 @@ class PredictionRequest(BaseModel):
 
 class PredictionResponse(BaseModel):
     predicted_waiting_time_minutes: float
+    kategori_waktu_tunggu: str
     status: str = "success"
 
 
@@ -287,6 +288,17 @@ def preprocess_request(payload: PredictionRequest) -> pd.DataFrame:
     return input_data
 
 
+def get_kategori_waktu_tunggu(minutes: float) -> str:
+    if minutes <= 10:
+        return "Cepat"
+    elif minutes <= 25:
+        return "Normal"
+    elif minutes <= 45:
+        return "Lama"
+    else:
+        return "Sangat Lama"
+
+
 def predict_waiting_time(input_data: pd.DataFrame) -> float:
     scaled_data = scaler.transform(input_data)
     scaled_prediction = model.predict(scaled_data, verbose=0)
@@ -323,6 +335,7 @@ def predict(payload: PredictionRequest):
     try:
         input_data = preprocess_request(payload)
         predicted_minutes = predict_waiting_time(input_data)
+        kategori = get_kategori_waktu_tunggu(predicted_minutes)
     except ValueError as error:
         raise HTTPException(
             status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
@@ -334,4 +347,7 @@ def predict(payload: PredictionRequest):
             detail=f"Gagal melakukan prediksi: {error}",
         ) from error
 
-    return PredictionResponse(predicted_waiting_time_minutes=predicted_minutes)
+    return PredictionResponse(
+        predicted_waiting_time_minutes=predicted_minutes,
+        kategori_waktu_tunggu=kategori
+    )
