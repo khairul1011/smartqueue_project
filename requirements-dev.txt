@@ -1,0 +1,7 @@
+# Development and Notebook requirements (Not deployed to Azure)
+-r requirements.txt
+xgboost
+matplotlib
+seaborn
+jupyter
+nbformat
