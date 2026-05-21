@@ -1,56 +1,100 @@
-# SmartQueue AI API
+# 🏥 SmartQueue AI — Prediksi Waktu Tunggu Pasien Rumah Sakit
 
-REST API untuk prediksi waktu tunggu pasien rumah sakit menggunakan FastAPI dan model TensorFlow.
+Repositori ini memuat *Capstone Project* untuk memprediksi waktu tunggu pasien rumah sakit. Proyek ini mengimplementasikan algoritma **Deep Learning** menggunakan arsitektur custom dengan framework **TensorFlow/Keras**, yang kemudian di-deploy sebagai REST API menggunakan **FastAPI**.
 
-## Struktur Project
+## 🌟 Fitur Utama (Capstone Criteria Met)
+
+Proyek ini telah memenuhi seluruh kriteria kelulusan utama (Main Quest) dan opsional (Side Quest):
+
+### ✅ Main Quest
+1. **Model Deep Learning:** Dibangun menggunakan Keras Functional API.
+2. **Custom Layer (`ResidualDenseBlock`):** Mengimplementasikan *skip connections* untuk mengalirkan informasi tanpa modifikasi (mirip arsitektur ResNet) untuk mencegah *vanishing gradient*.
+3. **Custom Loss (`WeightedHuberLoss`):** Fungsi loss asimetris yang memberikan penalti 1.1x lebih berat untuk *under-prediction* (karena di rumah sakit, memprediksi waktu tunggu lebih lambat lebih baik daripada terlalu cepat).
+4. **Custom Callback (`DetailedTrainingLogger`):** Menyimpan seluruh metrik epoch secara otomatis ke dalam format JSON (`training_log.json`).
+5. **Model Export & Inference:** Model disimpan sebagai `best_model.keras` dan diuji langsung pada akhir notebook.
+
+### ✅ Side Quest
+1. **REST API (FastAPI):** Aplikasi telah di-deploy secara lokal dengan endpoint `/predict`.
+2. **Custom Training Loop (`tf.GradientTape`):** Mendemonstrasikan pelatihan kontrol penuh (manual forward & backward pass) dalam notebook.
+3. **TensorBoard Integration:** Callback TensorBoard aktif selama *training*, dan log interaktif disematkan langsung di dalam notebook menggunakan `%tensorboard`.
+4. **Kinerja Unggul (Akurasi Tinggi):**
+   - R² Score: **> 95%** (Syarat: ≥ 85%)
+   - Normalized MAE: **~0.0309** (mewakili margin error murni sekitar 2.6 menit dari rentang target 0-87 menit, bersaing setara dengan algoritma *state-of-the-art* tabular XGBoost).
+5. **Visualisasi Komprehensif:** Terdapat visualisasi untuk kurva *training*, perbandingan model, distribusi error, diagram arsitektur model, hingga fitur yang paling berpengaruh (*Feature Importance*).
+
+---
+
+## 📂 Struktur Direktori
 
 ```text
 smartqueue_project/
 ├── app/
 │   ├── __init__.py
-│   └── app.py
+│   └── app.py                        # REST API dengan FastAPI
+├── datasets/
+│   └── dataset_RS2_final.csv         # Dataset utama (pra-pemrosesan)
 ├── deployment/
 │   └── model/
-│       ├── best_model.keras
-│       ├── feature_scaler.save
-│       └── target_scaler.save
-├── experiments/
-│   └── model dan artefak hasil eksperimen
-├── models/
-│   └── model lama atau artefak referensi
+│       ├── best_model.keras          # Model Deep Learning terbaik yang diekspor
+│       ├── feature_scaler.save       # Scaler fitur (StandardScaler)
+│       ├── target_scaler.save        # Scaler target (MinMaxScaler)
+│       ├── feature_columns.pkl       # Daftar urutan kolom
+│       ├── training_log.json         # Log pelatihan (Custom Callback)
+│       └── *.png                     # Output visualisasi grafik dari notebook
+├── logs/
+│   └── fit/                          # TensorBoard event logs
 ├── notebooks/
-│   └── notebook eksperimen dan training
+│   └── RS2_final_Custom_Model_dan_Custom_Training.ipynb  # NOTEBOOK UTAMA
+├── .gitignore
 ├── requirements.txt
 └── README.md
 ```
 
-## Menjalankan Lokal
+> **Catatan:** File-file eksperimen lama berukuran besar dan model legacy telah dipindahkan ke folder `backup/` yang disembunyikan dari Git agar repo ini ringan dan profesional.
 
-1. Buat virtual environment.
-2. Install dependency:
+---
 
+## 🚀 Cara Menjalankan Aplikasi
+
+### 1. Instalasi Environment
+Direkomendasikan menggunakan Virtual Environment.
 ```bash
+python -m venv venv
+source venv/bin/activate  # Untuk Mac/Linux
+# venv\Scripts\activate   # Untuk Windows
+
 pip install -r requirements.txt
 ```
 
-3. Jalankan server:
-
+### 2. Menjalankan REST API (FastAPI Server)
+Pastikan Anda berada di root direktori proyek, lalu jalankan Uvicorn:
 ```bash
 uvicorn app.app:app --reload
 ```
+API akan berjalan di `http://127.0.0.1:8000`.
 
-4. Buka dokumentasi API di:
+### 3. Menguji API
+Buka dokumentasi interaktif Swagger UI untuk langsung melakukan pengujian:
+👉 **[http://127.0.0.1:8000/docs](http://127.0.0.1:8000/docs)**
 
-```text
-http://127.0.0.1:8000/docs
+**Contoh Request Payload (JSON):**
+```json
+{
+  "umur": 35,
+  "jumlah_antrian": 20,
+  "jam_kedatangan": 9,
+  "asuransi": "BPJS",
+  "prioritas": "Sedang",
+  "status_pasien": "Rawat Jalan",
+  "nama_poli": "Penyakit Dalam"
+}
 ```
 
-## File Model
+*Backend akan secara otomatis memproses fitur-fitur teknis lainnya (seperti `is_peak`, encoding siklus waktu menggunakan sinus/kosinus, dll) berdasarkan tanggal saat request dilakukan.*
 
-Aplikasi memuat artefak final dari `deployment/model/`:
+---
 
-- `best_model.keras`: model TensorFlow/Keras final.
-- `feature_scaler.save`: scaler untuk fitur input.
-- `target_scaler.save`: scaler untuk mengembalikan hasil prediksi ke satuan menit.
+## 📓 Cara Menjalankan Notebook
+Notebook `RS2_final_Custom_Model_dan_Custom_Training.ipynb` dirancang agar dapat dijalankan secara berurutan (*Run All*). 
 
-Folder `experiments/` digunakan untuk menyimpan hasil eksperimen dari notebook, sedangkan API production hanya memakai file di `deployment/model/`.
+Pastikan **Jupyter Kernel** Anda diarahkan ke *virtual environment* (`venv`) proyek ini yang telah berisi library `tensorflow`, `xgboost`, `pandas`, dll., sebelum Anda menjalankannya. Semua artefak yang dihasilkan notebook (model `.keras`, *scalers*, gambar plot grafik) akan secara otomatis diperbarui di dalam folder `deployment/model/`.

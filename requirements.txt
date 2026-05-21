@@ -8,3 +8,8 @@ numpy
 scikit-learn
 joblib
 pydantic
+xgboost
+matplotlib
+seaborn
+jupyter
+nbformat
