@@ -1,30 +1,30 @@
-# 🏥 SmartQueue AI — Prediksi Waktu Tunggu Pasien Rumah Sakit
+# SmartQueue AI — Prediksi Waktu Tunggu Pasien Rumah Sakit
 
-Repositori ini memuat *Capstone Project* untuk memprediksi waktu tunggu pasien rumah sakit. Proyek ini mengimplementasikan algoritma **Deep Learning** menggunakan arsitektur custom dengan framework **TensorFlow/Keras**, yang kemudian di-deploy sebagai REST API menggunakan **FastAPI**.
+Repositori ini memuat *Capstone Project* untuk memprediksi waktu tunggu pasien rumah sakit. Proyek ini mengimplementasikan algoritma Deep Learning menggunakan arsitektur custom dengan framework TensorFlow/Keras, yang kemudian di-deploy sebagai REST API menggunakan FastAPI.
 
-## 🌟 Fitur Utama (Capstone Criteria Met)
+## Fitur Utama (Capstone Criteria)
 
 Proyek ini telah memenuhi seluruh kriteria kelulusan utama (Main Quest) dan opsional (Side Quest):
 
-### ✅ Main Quest
+### Kriteria Utama (Main Quest)
 1. **Model Deep Learning:** Dibangun menggunakan Keras Functional API.
-2. **Custom Layer (`ResidualDenseBlock`):** Mengimplementasikan *skip connections* untuk mengalirkan informasi tanpa modifikasi (mirip arsitektur ResNet) untuk mencegah *vanishing gradient*.
-3. **Custom Loss (`WeightedHuberLoss`):** Fungsi loss asimetris yang memberikan penalti 1.1x lebih berat untuk *under-prediction* (karena di rumah sakit, memprediksi waktu tunggu lebih lambat lebih baik daripada terlalu cepat).
-4. **Custom Callback (`DetailedTrainingLogger`):** Menyimpan seluruh metrik epoch secara otomatis ke dalam format JSON (`training_log.json`).
-5. **Model Export & Inference:** Model disimpan sebagai `best_model.keras` dan diuji langsung pada akhir notebook.
+2. **Custom Layer (`ResidualDenseBlock`):** Mengimplementasikan *skip connections* untuk mengalirkan informasi tanpa modifikasi (mengadaptasi arsitektur ResNet) guna mencegah *vanishing gradient*.
+3. **Custom Loss (`WeightedHuberLoss`):** Fungsi loss asimetris yang memberikan penalti 1.1x lebih berat untuk *under-prediction* (dalam konteks rumah sakit, memprediksi waktu tunggu lebih lambat dinilai lebih aman daripada terlalu cepat).
+4. **Custom Callback (`DetailedTrainingLogger`):** Menyimpan seluruh metrik per epoch secara otomatis ke dalam format JSON (`training_log.json`).
+5. **Model Export & Inference:** Model disimpan sebagai `best_model.keras` dan diuji secara langsung pada bagian akhir notebook.
 
-### ✅ Side Quest
-1. **REST API (FastAPI):** Aplikasi telah di-deploy secara lokal dengan endpoint `/predict`.
-2. **Custom Training Loop (`tf.GradientTape`):** Mendemonstrasikan pelatihan kontrol penuh (manual forward & backward pass) dalam notebook.
-3. **TensorBoard Integration:** Callback TensorBoard aktif selama *training*, dan log interaktif disematkan langsung di dalam notebook menggunakan `%tensorboard`.
-4. **Kinerja Unggul (Akurasi Tinggi):**
-   - R² Score: **> 95%** (Syarat: ≥ 85%)
-   - Normalized MAE: **~0.0309** (mewakili margin error murni sekitar 2.6 menit dari rentang target 0-87 menit, bersaing setara dengan algoritma *state-of-the-art* tabular XGBoost).
-5. **Visualisasi Komprehensif:** Terdapat visualisasi untuk kurva *training*, perbandingan model, distribusi error, diagram arsitektur model, hingga fitur yang paling berpengaruh (*Feature Importance*).
+### Kriteria Opsional (Side Quest)
+1. **REST API (FastAPI):** Aplikasi telah di-deploy secara lokal dengan menyediakan endpoint `/predict`.
+2. **Custom Training Loop (`tf.GradientTape`):** Mendemonstrasikan pelatihan dengan kontrol penuh (pengaturan manual *forward* dan *backward pass*) di dalam notebook.
+3. **TensorBoard Integration:** Callback TensorBoard aktif selama masa *training*, dan log interaktif disematkan langsung di dalam notebook menggunakan `%tensorboard`.
+4. **Kinerja Unggul:**
+   - R² Score: **> 95%** (Syarat kelulusan: ≥ 85%)
+   - Normalized MAE: **~0.0309** (mewakili margin error murni sekitar 2.6 menit dari rentang target 0-87 menit, memiliki performa yang setara dengan algoritma *state-of-the-art* tabular seperti XGBoost).
+5. **Visualisasi Komprehensif:** Terdapat visualisasi detail untuk kurva *training*, perbandingan antar model, distribusi error, diagram arsitektur model, hingga analisis fitur yang paling berpengaruh (*Feature Importance*).
 
 ---
 
-## 📂 Struktur Direktori
+## Struktur Direktori
 
 ```text
 smartqueue_project/
@@ -32,14 +32,14 @@ smartqueue_project/
 │   ├── __init__.py
 │   └── app.py                        # REST API dengan FastAPI
 ├── datasets/
-│   └── dataset_RS2_final.csv         # Dataset utama (pra-pemrosesan)
+│   └── dataset_RS2_final.csv         # Dataset utama (telah diproses)
 ├── deployment/
 │   └── model/
 │       ├── best_model.keras          # Model Deep Learning terbaik yang diekspor
 │       ├── feature_scaler.save       # Scaler fitur (StandardScaler)
 │       ├── target_scaler.save        # Scaler target (MinMaxScaler)
-│       ├── feature_columns.pkl       # Daftar urutan kolom
-│       ├── training_log.json         # Log pelatihan (Custom Callback)
+│       ├── feature_columns.pkl       # Daftar dan urutan kolom fitur
+│       ├── training_log.json         # Log pelatihan model (Custom Callback)
 │       └── *.png                     # Output visualisasi grafik dari notebook
 ├── logs/
 │   └── fit/                          # TensorBoard event logs
@@ -50,32 +50,32 @@ smartqueue_project/
 └── README.md
 ```
 
-> **Catatan:** File-file eksperimen lama berukuran besar dan model legacy telah dipindahkan ke folder `backup/` yang disembunyikan dari Git agar repo ini ringan dan profesional.
+> **Catatan:** File-file eksperimen lama berukuran besar dan model *legacy* telah dipindahkan ke folder backup yang diabaikan (*ignored*) oleh Git agar ukuran repositori tetap ringan dan profesional.
 
 ---
 
-## 🚀 Cara Menjalankan Aplikasi
+## Cara Menjalankan Aplikasi
 
 ### 1. Instalasi Environment
-Direkomendasikan menggunakan Virtual Environment.
+Sangat direkomendasikan untuk menggunakan *Virtual Environment*.
 ```bash
 python -m venv venv
-source venv/bin/activate  # Untuk Mac/Linux
-# venv\Scripts\activate   # Untuk Windows
+source venv/bin/activate  # Untuk pengguna Mac/Linux
+# venv\Scripts\activate   # Untuk pengguna Windows
 
 pip install -r requirements.txt
 ```
 
 ### 2. Menjalankan REST API (FastAPI Server)
-Pastikan Anda berada di root direktori proyek, lalu jalankan Uvicorn:
+Pastikan terminal berada di *root* direktori proyek, kemudian jalankan Uvicorn:
 ```bash
 uvicorn app.app:app --reload
 ```
 API akan berjalan di `http://127.0.0.1:8000`.
 
 ### 3. Menguji API
-Buka dokumentasi interaktif Swagger UI untuk langsung melakukan pengujian:
-👉 **[http://127.0.0.1:8000/docs](http://127.0.0.1:8000/docs)**
+Buka dokumentasi interaktif Swagger UI pada browser untuk melakukan pengujian langsung:
+**http://127.0.0.1:8000/docs**
 
 **Contoh Request Payload (JSON):**
 ```json
@@ -90,11 +90,11 @@ Buka dokumentasi interaktif Swagger UI untuk langsung melakukan pengujian:
 }
 ```
 
-*Backend akan secara otomatis memproses fitur-fitur teknis lainnya (seperti `is_peak`, encoding siklus waktu menggunakan sinus/kosinus, dll) berdasarkan tanggal saat request dilakukan.*
+*Sistem backend akan secara otomatis memproses kebutuhan *feature engineering* teknis lainnya (seperti penentuan status `is_peak`, encoding siklus waktu periodik menggunakan nilai sinus/kosinus, dll.) berdasarkan tanggal sistem saat permintaan diterima.*
 
 ---
 
-## 📓 Cara Menjalankan Notebook
-Notebook `RS2_final_Custom_Model_dan_Custom_Training.ipynb` dirancang agar dapat dijalankan secara berurutan (*Run All*). 
+## Cara Menjalankan Notebook
+Notebook `RS2_final_Custom_Model_dan_Custom_Training.ipynb` dirancang agar dapat dieksekusi secara berurutan dari awal hingga akhir (*Run All*). 
 
-Pastikan **Jupyter Kernel** Anda diarahkan ke *virtual environment* (`venv`) proyek ini yang telah berisi library `tensorflow`, `xgboost`, `pandas`, dll., sebelum Anda menjalankannya. Semua artefak yang dihasilkan notebook (model `.keras`, *scalers*, gambar plot grafik) akan secara otomatis diperbarui di dalam folder `deployment/model/`.
+Pastikan pengaturan **Jupyter Kernel** Anda telah diarahkan ke *virtual environment* (`venv`) proyek ini yang memuat semua pustaka prasyarat (seperti `tensorflow`, `xgboost`, `pandas`). Semua artefak yang dihasilkan dari eksekusi notebook (termasuk model `.keras`, *scalers*, dan output gambar grafik) akan diperbarui secara otomatis dan disalin ke dalam direktori `deployment/model/`.
