@@ -1,12 +1,24 @@
+# Environments
 venv/
+.env
+
+# Python
 __pycache__/
 *.pyc
-# logs/ — NOT ignored to allow TensorBoard logs in repository
+.pytest_cache/
+.mypy_cache/
+
+# Editor & OS
 .DS_Store
-.ipynb_checkpoints/
-.env
-*.log
 .vscode/
+.idea/
+.ipynb_checkpoints/
+
+# Logs
+# logs/ — NOT ignored to allow TensorBoard logs in repository
+*.log
+
+# Project specific
 models/
 deployment/model/legacy*/
 

@@ -8,3 +8,5 @@ numpy
 scikit-learn
 joblib
 pydantic
+google-generativeai
+python-dotenv

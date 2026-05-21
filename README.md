@@ -30,7 +30,14 @@ Proyek ini telah memenuhi seluruh kriteria kelulusan utama (Main Quest) dan opsi
 smartqueue_project/
 ├── app/
 │   ├── __init__.py
-│   └── app.py                        # REST API dengan FastAPI
+│   ├── app.py                        # REST API utama (prediksi waktu tunggu + routing)
+│   ├── config.py                     # Konfigurasi terpusat (API keys, env vars)
+│   └── cdss/                         # Modul CDSS (Clinical Decision Support System)
+│       ├── __init__.py
+│       ├── router.py                 # Endpoint /cdss/recommend & /cdss/health
+│       ├── schemas.py                # Pydantic models request/response CDSS
+│       ├── prompt.py                 # Prompt template untuk Gemini API
+│       └── service.py                # Logic integrasi Gemini API
 ├── datasets/
 │   └── dataset_RS2_final.csv         # Dataset utama (telah diproses)
 ├── deployment/
@@ -45,6 +52,7 @@ smartqueue_project/
 │   └── fit/                          # TensorBoard event logs
 ├── notebooks/
 │   └── RS2_final_Custom_Model_dan_Custom_Training.ipynb  # NOTEBOOK UTAMA
+├── .env                              # Environment variables (API keys, TIDAK di-commit)
 ├── .gitignore
 ├── requirements.txt
 └── README.md
@@ -94,7 +102,45 @@ Buka dokumentasi interaktif Swagger UI pada browser untuk melakukan pengujian la
 
 ---
 
+## Fitur Tambahan: CDSS — Clinical Decision Support System
+
+Sistem ini dilengkapi fitur **CDSS** untuk membantu dokter mendapatkan rekomendasi kemungkinan penyakit (maksimal 3) beserta saran pemeriksaan lanjutan berdasarkan input gejala pasien. Fitur ini didukung oleh **Google Gemini API** yang telah dioptimasi untuk efisiensi token.
+
+### Keunggulan Sistem CDSS Kami
+- **Token Efficient:** Membatasi output menjadi maksimal 3 penyakit teratas dan penjelasan singkat (1-2 kalimat) untuk menghemat penggunaan token/biaya secara signifikan.
+- **Auto Model Fallback:** Sistem tahan banting terhadap error limit/kuota (*Rate Limit 429*). Jika model utama (misal `gemini-2.5-flash`) gagal karena kuota harian, sistem akan **otomatis** dan diam-diam beralih ke model cadangan (`gemini-flash-latest`) sehingga pengguna tidak pernah mengalami *downtime*.
+
+### Setup Lingkungan (Environment)
+
+1. Kunjungi [Google AI Studio](https://aistudio.google.com/apikey) dan buat API key gratis.
+2. Konfigurasikan `.env` di root project seperti berikut:
+   ```env
+   GEMINI_API_KEY=your_actual_api_key_here
+   GEMINI_MODEL=gemini-2.5-flash
+   ```
+
+### Endpoint CDSS
+
+| Method | Endpoint | Deskripsi |
+|--------|----------|-----------|
+| `POST` | `/cdss/recommend` | Rekomendasi penyakit dan penunjang diagnostik |
+| `GET` | `/cdss/health` | Status konektivitas dengan server Google Gemini |
+
+**Contoh Request Payload CDSS (JSON):**
+```json
+{
+  "gejala": "demam tinggi sudah 3 hari, batuk kering, sesak napas, nyeri dada saat bernapas",
+  "umur": 45,
+  "jenis_kelamin": "L"
+}
+```
+
+> **⚠️ Disclaimer:** Fitur CDSS merupakan alat bantu berbasis AI dan **BUKAN** pengganti diagnosis medis. Keputusan klinis tetap sepenuhnya berada di tangan dokter yang merawat.
+
+---
+
 ## Cara Menjalankan Notebook
 Notebook `RS2_final_Custom_Model_dan_Custom_Training.ipynb` dirancang agar dapat dieksekusi secara berurutan dari awal hingga akhir (*Run All*). 
 
 Pastikan pengaturan **Jupyter Kernel** Anda telah diarahkan ke *virtual environment* (`venv`) proyek ini yang memuat semua pustaka prasyarat (seperti `tensorflow`, `xgboost`, `pandas`). Semua artefak yang dihasilkan dari eksekusi notebook (termasuk model `.keras`, *scalers*, dan output gambar grafik) akan diperbarui secara otomatis dan disalin ke dalam direktori `deployment/model/`.
+

@@ -211,9 +211,17 @@ feature_columns = joblib.load(MODEL_DIR / "feature_columns.pkl")
 
 app = FastAPI(
     title="SmartQueue AI API",
-    description="REST API prediksi waktu tunggu pasien rumah sakit.",
-    version="4.0",
+    description=(
+        "REST API prediksi waktu tunggu pasien rumah sakit "
+        "dan Clinical Decision Support System (CDSS)."
+    ),
+    version="4.1",
 )
+
+# --- CDSS Router ---
+from app.cdss.router import cdss_router  # noqa: E402
+
+app.include_router(cdss_router)
 
 
 def normalize_text(value: str) -> str:
